@@ -3,38 +3,44 @@ import random
 
 def get_player_list(playercsv):
 	#add player information (rows) from a csv file into a list
+	players = []
+	
 	with open(playercsv, newline ='') as playercsv:
 		reader = csv.DictReader(playercsv)
 		for row in reader:
 			players.append(row)
+	
+	return players
 
 def sort_players_by_experience(players):
 	#sort each players into two lists: exp. and inexp.
+	exp_players = []
+	inexp_players = []
+	
 	for player in players:
 		if player['Soccer Experience'].lower() == 'yes':
 			exp_players.append(player)
 		else:
 			inexp_players.append(player)
 
-def build_teams(league):
+	return exp_players, inexp_players
 	
-	#shuffle lists of exp. and inexp. players
+def build_teams(league, exp_players, inexp_players):
+	
+	#shuffle lists of exp. and inexp. players for sweet, sweet randomness
 	random.shuffle(exp_players)
 	random.shuffle(inexp_players)
 				
-	#calculate appropriate number of exp and and inexp players per team
-	exp_player_num = len(exp_players)//len(league)
-	inexp_player_num = len(inexp_players)//len(league)
+	#calculate appropriate number of exp and inexp players to distribute per team
+		#rounding (up) for case when players cannot be divided equally
+	num_exp_players = int(round(len(exp_players)/len(league), 0))
+	num_inexp_players = int(round(len(inexp_players)/len(league), 0))
 	
-	#distribute players evenly until none left
-	while exp_players:
-		for team in league:	
-			league[team] += exp_players[0:exp_player_num]
-			del exp_players[0:exp_player_num]
-	while inexp_players:
-		for team in league:
-			league[team] += inexp_players[0:inexp_player_num]
-			del inexp_players[0:inexp_player_num]
+	#distribute exp. and inexp. players evenly to the teams in the league
+	for team in league:
+		league[team] += exp_players[0:num_exp_players] + inexp_players[0:num_inexp_players]
+		del exp_players[0:num_exp_players]
+		del inexp_players[0:num_inexp_players]
 
 def write_roster(league):
 	#for every team, write the team name and every player on that team (with additional info) to teams.txt
@@ -63,20 +69,17 @@ def write_welcome_emails(league):
 
 if __name__ == '__main__':
 	
-	players = []
-	exp_players = []
-	inexp_players = []
 	league = {'Dragons': [], 'Raptors': [], 'Sharks': []}
 	first_practice = 'April 1st, 2018 at 2pm'
 	
 	#get list of players from csv file
-	get_player_list('soccer_players.csv')
+	players = get_player_list('soccer_players.csv')
 	
 	#sort players into two lists: exp. and inexp.
-	sort_players_by_experience(players)
+	sorted_players = sort_players_by_experience(players)
 	
 	#build teams that draw evenly from exp. and inexp. player lists
-	build_teams(league)
+	build_teams(league, *sorted_players)
 
 	#build team roster as txt file
 	write_roster(league)
